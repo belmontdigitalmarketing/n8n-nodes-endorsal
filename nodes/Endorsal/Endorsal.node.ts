@@ -464,12 +464,23 @@ export class Endorsal implements INodeType {
 										default: 'eq',
 									},
 									{
+										displayName: 'Property Name or ID',
+										name: 'propertyValue',
+										type: 'options',
+										typeOptions: { loadOptionsMethod: 'getProperties' },
+										default: '',
+										description:
+											'Pick the property by name. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+										displayOptions: { show: { field: ['propertyID'] } },
+									},
+									{
 										displayName: 'Value',
 										name: 'value',
 										type: 'string',
 										default: '',
 										description:
 											'Value to match. For "In" provide JSON array. For numbers enter digits. "Contains" is case-insensitive substring (or regex).',
+										displayOptions: { hide: { field: ['propertyID'] } },
 									},
 								],
 							},
@@ -704,12 +715,23 @@ export class Endorsal implements INodeType {
 								default: 'eq',
 							},
 							{
+								displayName: 'Property Name or ID',
+								name: 'propertyValue',
+								type: 'options',
+								typeOptions: { loadOptionsMethod: 'getProperties' },
+								default: '',
+								description:
+									'Pick the property by name. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+								displayOptions: { show: { field: ['propertyID'] } },
+							},
+							{
 								displayName: 'Value',
 								name: 'value',
 								type: 'string',
 								default: '',
 								description:
 									'Value to match. For the "In" operator, provide a JSON array (e.g., ["abc123","def456"]). For numbers, enter digits only. "Contains" treats the value as a case-insensitive substring (or regex if it parses as one).',
+								displayOptions: { hide: { field: ['propertyID'] } },
 							},
 						],
 					},
@@ -957,14 +979,17 @@ export class Endorsal implements INodeType {
 					else if (operation === 'getAll') {
 						const filters = this.getNodeParameter('getAllFilters', i, {}) as IDataObject;
 						const matchesCollection = (filters.matches as {
-							match?: Array<{ field: string; operator: string; value: string }>;
+							match?: Array<{ field: string; operator: string; value: string; propertyValue?: string }>;
 						}) ?? {};
-						const userMatches = (matchesCollection.match ?? []).map((m) => ({
-							field: m.field,
-							internalOperator: m.operator,
-							apiOperator: SEARCH_OPERATOR_MAP[m.operator] ?? m.operator,
-							value: parseMatchValue(m.value, m.operator),
-						}));
+						const userMatches = (matchesCollection.match ?? []).map((m) => {
+							const rawValue = m.field === 'propertyID' ? (m.propertyValue ?? '') : m.value;
+							return {
+								field: m.field,
+								internalOperator: m.operator,
+								apiOperator: SEARCH_OPERATOR_MAP[m.operator] ?? m.operator,
+								value: parseMatchValue(rawValue, m.operator),
+							};
+						});
 
 						let items: any[] = [];
 
@@ -1090,20 +1115,21 @@ export class Endorsal implements INodeType {
 
 					else if (operation === 'search') {
 						const searchQuery = this.getNodeParameter('searchQuery', i, {}) as {
-							match?: Array<{ field: string; operator: string; value: string }>;
+							match?: Array<{ field: string; operator: string; value: string; propertyValue?: string }>;
 						};
 
 						const query = (searchQuery.match ?? []).map((m) => {
 							const apiOperator = SEARCH_OPERATOR_MAP[m.operator] ?? m.operator;
-							let parsedValue: any = m.value;
+							const rawValue = m.field === 'propertyID' ? (m.propertyValue ?? '') : m.value;
+							let parsedValue: any = rawValue;
 							if (apiOperator === 'in') {
 								try {
-									parsedValue = JSON.parse(m.value);
+									parsedValue = JSON.parse(rawValue);
 								} catch {
-									parsedValue = m.value;
+									parsedValue = rawValue;
 								}
-							} else if (/^-?\d+(\.\d+)?$/.test(m.value)) {
-								parsedValue = Number(m.value);
+							} else if (/^-?\d+(\.\d+)?$/.test(rawValue)) {
+								parsedValue = Number(rawValue);
 							}
 							return {
 								field: m.field,
