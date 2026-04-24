@@ -95,8 +95,9 @@ export class Endorsal implements INodeType {
 				type: 'options',
 				noDataExpression: true,
 				options: [
-					{ name: 'Testimonial', value: 'testimonial' },
+					{ name: 'Property', value: 'property' },
 					{ name: 'Tag', value: 'tag' },
+					{ name: 'Testimonial', value: 'testimonial' },
 				],
 				default: 'testimonial',
 			},
@@ -120,6 +121,34 @@ export class Endorsal implements INodeType {
 					{ name: 'Update', value: 'update', action: 'Update a testimonial' },
 				],
 				default: 'create',
+			},
+
+			// ==========================
+			// Property Operations
+			// ==========================
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: { show: { resource: ['property'] } },
+				options: [
+					{ name: 'Get', value: 'get', action: 'Get a property', description: 'Retrieve a single property by ID' },
+					{ name: 'Get Many', value: 'getAll', action: 'Get many properties', description: 'List all properties on your account' },
+				],
+				default: 'getAll',
+			},
+
+			{
+				displayName: 'Property Name or ID',
+				name: 'propertyId',
+				type: 'options',
+				typeOptions: { loadOptionsMethod: 'getProperties' },
+				required: true,
+				default: '',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				displayOptions: { show: { resource: ['property'], operation: ['get'] } },
 			},
 
 			// ==========================
@@ -971,6 +1000,25 @@ export class Endorsal implements INodeType {
 						responseData = await endorsalApiRequest.call(
 							this, 'POST', '/testimonials/search', { query },
 						);
+						for (const item of (responseData?.data ?? [])) {
+							returnData.push({ json: item, pairedItem: { item: i } });
+						}
+						continue;
+					}
+				}
+
+				// ======================
+				// Property
+				// ======================
+				else if (resource === 'property') {
+					if (operation === 'get') {
+						const id = this.getNodeParameter('propertyId', i) as string;
+						responseData = await endorsalApiRequest.call(this, 'GET', `/properties/${id}`);
+						responseData = responseData?.data ?? responseData;
+					}
+
+					else if (operation === 'getAll') {
+						responseData = await endorsalApiRequest.call(this, 'GET', '/properties');
 						for (const item of (responseData?.data ?? [])) {
 							returnData.push({ json: item, pairedItem: { item: i } });
 						}
