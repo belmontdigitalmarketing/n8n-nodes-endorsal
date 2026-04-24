@@ -68,6 +68,72 @@ const SEARCH_OPERATOR_MAP: Record<string, string> = {
 	in: 'in',
 };
 
+function parseMatchValue(value: string, internalOperator: string): any {
+	if (internalOperator === 'in') {
+		try {
+			return JSON.parse(value);
+		} catch {
+			return value;
+		}
+	}
+	if (/^-?\d+(\.\d+)?$/.test(value)) {
+		return Number(value);
+	}
+	return value;
+}
+
+function matchesCondition(
+	item: Record<string, any>,
+	condition: { field: string; internalOperator: string; value: any },
+): boolean {
+	const fieldValue = item[condition.field];
+	const v = condition.value;
+	switch (condition.internalOperator) {
+		case 'eq': return fieldValue == v;
+		case 'ne': return fieldValue != v;
+		case 'gt': return Number(fieldValue) > Number(v);
+		case 'gte': return Number(fieldValue) >= Number(v);
+		case 'lt': return Number(fieldValue) < Number(v);
+		case 'lte': return Number(fieldValue) <= Number(v);
+		case 'contains':
+			try {
+				return new RegExp(String(v), 'i').test(String(fieldValue ?? ''));
+			} catch {
+				return String(fieldValue ?? '').toLowerCase().includes(String(v).toLowerCase());
+			}
+		case 'in':
+			return Array.isArray(v) ? v.includes(fieldValue) : false;
+		default: return true;
+	}
+}
+
+// Reused by both Testimonial → Search and Testimonial → Get Many → Match Conditions.
+const TESTIMONIAL_FIELD_OPTIONS: INodePropertyOptions[] = [
+	{ name: 'Approval Status (0=Pending, 1=Approved, 2=Rejected)', value: 'approved' },
+	{ name: 'Comments', value: 'comments' },
+	{ name: 'Company', value: 'company' },
+	{ name: 'Date Added (Unix Ms)', value: 'added' },
+	{ name: 'Email', value: 'email' },
+	{ name: 'Featured (0=No, 1=Yes)', value: 'featured' },
+	{ name: 'ID', value: '_id' },
+	{ name: 'Location', value: 'location' },
+	{ name: 'Name', value: 'name' },
+	{ name: 'Position', value: 'position' },
+	{ name: 'Property ID', value: 'propertyID' },
+	{ name: 'Rating', value: 'rating' },
+];
+
+const TESTIMONIAL_OPERATOR_OPTIONS: INodePropertyOptions[] = [
+	{ name: 'Equals', value: 'eq' },
+	{ name: 'Not Equal', value: 'ne' },
+	{ name: 'Greater Than', value: 'gt' },
+	{ name: 'Greater Than or Equal', value: 'gte' },
+	{ name: 'Less Than', value: 'lt' },
+	{ name: 'Less Than or Equal', value: 'lte' },
+	{ name: 'Contains (Substring or Regex, Case-Insensitive)', value: 'contains' },
+	{ name: 'In (Array)', value: 'in' },
+];
+
 // ============================================================
 // Node Definition
 // ============================================================
@@ -368,6 +434,47 @@ export class Endorsal implements INodeType {
 						default: 5,
 						description: 'Only return testimonials with at least this rating',
 					},
+					{
+						displayName: 'Match Conditions',
+						name: 'matches',
+						type: 'fixedCollection',
+						typeOptions: { multipleValues: true },
+						placeholder: 'Add Match',
+						default: {},
+						description:
+							'Free-form field/operator/value rows for cases the structured filters above don\'t cover (e.g., Name contains "jack", Comments contains "great", _id in […]). Multiple matches are AND-combined.',
+						options: [
+							{
+								name: 'match',
+								displayName: 'Match',
+								values: [
+									{
+										displayName: 'Field',
+										name: 'field',
+										type: 'options',
+										options: TESTIMONIAL_FIELD_OPTIONS,
+										required: true,
+										default: 'name',
+									},
+									{
+										displayName: 'Operator',
+										name: 'operator',
+										type: 'options',
+										options: TESTIMONIAL_OPERATOR_OPTIONS,
+										default: 'eq',
+									},
+									{
+										displayName: 'Value',
+										name: 'value',
+										type: 'string',
+										default: '',
+										description:
+											'Value to match. For "In" provide JSON array. For numbers enter digits. "Contains" is case-insensitive substring (or regex).',
+									},
+								],
+							},
+						],
+					},
 				],
 			},
 
@@ -583,25 +690,17 @@ export class Endorsal implements INodeType {
 							{
 								displayName: 'Field',
 								name: 'field',
-								type: 'string',
+								type: 'options',
+								options: TESTIMONIAL_FIELD_OPTIONS,
 								required: true,
-								default: '',
-								description: 'Field name on the testimonial to match against (e.g., "name", "rating", "approved")',
+								default: 'name',
+								description: 'Testimonial field to match against',
 							},
 							{
 								displayName: 'Operator',
 								name: 'operator',
 								type: 'options',
-								options: [
-									{ name: 'Equals', value: 'eq' },
-									{ name: 'Not Equal', value: 'ne' },
-									{ name: 'Greater Than', value: 'gt' },
-									{ name: 'Greater Than or Equal', value: 'gte' },
-									{ name: 'Less Than', value: 'lt' },
-									{ name: 'Less Than or Equal', value: 'lte' },
-									{ name: 'Contains (Regex)', value: 'contains' },
-									{ name: 'In (Array)', value: 'in' },
-								],
+								options: TESTIMONIAL_OPERATOR_OPTIONS,
 								default: 'eq',
 							},
 							{
@@ -610,7 +709,7 @@ export class Endorsal implements INodeType {
 								type: 'string',
 								default: '',
 								description:
-									'Value to match. For the "In" operator, provide a JSON array (e.g., ["abc123","def456"]). For numbers, enter digits only.',
+									'Value to match. For the "In" operator, provide a JSON array (e.g., ["abc123","def456"]). For numbers, enter digits only. "Contains" treats the value as a case-insensitive substring (or regex if it parses as one).',
 							},
 						],
 					},
@@ -857,6 +956,16 @@ export class Endorsal implements INodeType {
 
 					else if (operation === 'getAll') {
 						const filters = this.getNodeParameter('getAllFilters', i, {}) as IDataObject;
+						const matchesCollection = (filters.matches as {
+							match?: Array<{ field: string; operator: string; value: string }>;
+						}) ?? {};
+						const userMatches = (matchesCollection.match ?? []).map((m) => ({
+							field: m.field,
+							internalOperator: m.operator,
+							apiOperator: SEARCH_OPERATOR_MAP[m.operator] ?? m.operator,
+							value: parseMatchValue(m.value, m.operator),
+						}));
+
 						let items: any[] = [];
 
 						if (filters.propertyID) {
@@ -864,14 +973,13 @@ export class Endorsal implements INodeType {
 							// are silently scoped to the API key's default property and ignore
 							// any propertyID filter. The undocumented /properties/{id}/testimonials
 							// endpoint is the only reliable way to fetch testimonials for a
-							// non-default property.
+							// non-default property — but it doesn't support server-side
+							// filtering, so we apply ALL filters client-side after fetching.
 							responseData = await endorsalApiRequest.call(
 								this, 'GET', `/properties/${filters.propertyID}/testimonials`,
 							);
 							items = responseData?.data ?? [];
 
-							// Apply secondary filters client-side since the property-scoped
-							// endpoint doesn't support them server-side.
 							if (filters.approved !== undefined && filters.approved !== '') {
 								items = items.filter((t: any) => t.approved === filters.approved);
 							}
@@ -881,9 +989,13 @@ export class Endorsal implements INodeType {
 							if (filters.rating !== undefined && filters.rating !== '') {
 								items = items.filter((t: any) => (t.rating ?? 0) >= (filters.rating as number));
 							}
+							for (const m of userMatches) {
+								items = items.filter((t) => matchesCondition(t, m));
+							}
 						} else {
-							// No property filter — use search endpoint when other filters set,
-							// otherwise plain list. Both are scoped to the key's default property.
+							// No property filter — combine all filters into a single search
+							// query when any are set, otherwise plain list. Both endpoints are
+							// scoped to the key's default property.
 							const query: Array<Record<string, any>> = [];
 							if (filters.approved !== undefined && filters.approved !== '') {
 								query.push({ field: 'approved', operator: '=', value: filters.approved });
@@ -893,6 +1005,9 @@ export class Endorsal implements INodeType {
 							}
 							if (filters.rating !== undefined && filters.rating !== '') {
 								query.push({ field: 'rating', operator: '>=', value: filters.rating });
+							}
+							for (const m of userMatches) {
+								query.push({ field: m.field, operator: m.apiOperator, value: m.value });
 							}
 
 							if (query.length > 0) {
