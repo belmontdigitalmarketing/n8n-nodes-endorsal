@@ -1,0 +1,57 @@
+{
+  "name": "@belmontdigitalmarketing/n8n-nodes-endorsal",
+  "version": "0.1.0",
+  "description": "n8n community node for Endorsal — testimonial collection and management",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "endorsal",
+    "testimonials",
+    "reviews",
+    "social-proof"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/belmontdigitalmarketing/n8n-nodes-endorsal",
+  "author": {
+    "name": "Belmont Digital Marketing",
+    "email": "matthias@belmontdigitalmarketing.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/belmontdigitalmarketing/n8n-nodes-endorsal.git"
+  },
+  "bugs": {
+    "url": "https://github.com/belmontdigitalmarketing/n8n-nodes-endorsal/issues"
+  },
+  "engines": {
+    "node": ">=18.10"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/EndorsalApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Endorsal/Endorsal.node.js",
+      "dist/nodes/Endorsal/EndorsalTrigger.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "gulp": "^4.0.2",
+    "n8n-workflow": "~1.10.0",
+    "typescript": "~5.2.2"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}
