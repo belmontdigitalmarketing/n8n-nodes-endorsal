@@ -131,6 +131,14 @@ export class Endorsal implements INodeType {
 			// Testimonial: Create
 			// ==================================================
 			{
+				displayName:
+					'<b>Required fields</b> (marked with a red asterisk): Property, Name, Comments. Everything else is optional.',
+				name: 'createNotice',
+				type: 'notice',
+				default: '',
+				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
+			},
+			{
 				displayName: 'Property Name or ID',
 				name: 'propertyID',
 				type: 'options',
@@ -157,7 +165,8 @@ export class Endorsal implements INodeType {
 				typeOptions: { rows: 4 },
 				required: true,
 				default: '',
-				description: 'The testimonial text',
+				description:
+					'The testimonial text. <b>Plain text only</b> — Endorsal does not render HTML or markdown (any tags will appear as literal text or be stripped). For multi-line / multi-paragraph testimonials, use line breaks (\\n in expressions, or just press Enter in the form). Endorsal stores newlines verbatim, but how they render in your widgets is style-dependent — recommend testing one multi-paragraph testimonial through your actual widget before relying on it.',
 				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
 			},
 			{
@@ -207,15 +216,6 @@ export class Endorsal implements INodeType {
 				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
 			},
 			{
-				displayName: 'Date Added',
-				name: 'added',
-				type: 'dateTime',
-				default: '',
-				description:
-					'Used to backdate a testimonial. Leave empty to let Endorsal record the current submission timestamp with full precision.',
-				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
-			},
-			{
 				displayName: 'Additional Fields',
 				name: 'additionalFields',
 				type: 'collection',
@@ -229,6 +229,14 @@ export class Endorsal implements INodeType {
 						type: 'string',
 						default: '',
 						description: "The customer's company name (e.g., 'Acme Inc')",
+					},
+					{
+						displayName: 'Date Added',
+						name: 'added',
+						type: 'dateTime',
+						default: '',
+						description:
+							'Used to backdate a testimonial. Leave empty to let Endorsal record the current submission timestamp with millisecond precision.',
 					},
 					{
 						displayName: 'Include Link to Workflow',
@@ -702,15 +710,14 @@ export class Endorsal implements INodeType {
 						if (email) body.email = email;
 						const avatar = this.getNodeParameter('avatar', i, '') as string;
 						if (avatar) body.avatar = avatar;
-						const added = this.getNodeParameter('added', i, '') as string;
-						if (added) {
-							body.added = new Date(added).toISOString().split('T')[0];
-						}
 
 						const additional = this.getNodeParameter('additionalFields', i) as IDataObject;
 						if (additional.location) body.location = additional.location;
 						if (additional.position) body.position = additional.position;
 						if (additional.company) body.company = additional.company;
+						if (additional.added) {
+							body.added = new Date(additional.added as string).toISOString().split('T')[0];
+						}
 
 						if (additional.includeLinkToWorkflow) {
 							appendWorkflowFooter.call(this, body, 'comments');
