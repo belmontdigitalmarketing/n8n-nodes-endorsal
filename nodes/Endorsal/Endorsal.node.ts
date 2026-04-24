@@ -161,6 +161,61 @@ export class Endorsal implements INodeType {
 				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
 			},
 			{
+				displayName: 'Rating',
+				name: 'rating',
+				type: 'number',
+				typeOptions: { minValue: 1, maxValue: 5 },
+				default: 5,
+				description: 'Star rating (1–5)',
+				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
+			},
+			{
+				displayName: 'Approval Status',
+				name: 'approved',
+				type: 'options',
+				options: [
+					{ name: 'Pending', value: 0 },
+					{ name: 'Approved', value: 1 },
+					{ name: 'Rejected', value: 2 },
+				],
+				default: 0,
+				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
+			},
+			{
+				displayName: 'Email',
+				name: 'email',
+				type: 'string',
+				placeholder: 'name@email.com',
+				default: '',
+				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
+			},
+			{
+				displayName: 'Avatar URL',
+				name: 'avatar',
+				type: 'string',
+				default: '',
+				placeholder: 'https://example.com/avatar.jpg',
+				description: 'URL to a publicly accessible image',
+				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
+			},
+			{
+				displayName: 'Featured',
+				name: 'featured',
+				type: 'boolean',
+				default: false,
+				description: 'Whether this testimonial should be featured',
+				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
+			},
+			{
+				displayName: 'Date Added',
+				name: 'added',
+				type: 'dateTime',
+				default: '',
+				description:
+					'Used to backdate a testimonial. Leave empty to let Endorsal record the current submission timestamp with full precision.',
+				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
+			},
+			{
 				displayName: 'Additional Fields',
 				name: 'additionalFields',
 				type: 'collection',
@@ -169,50 +224,11 @@ export class Endorsal implements INodeType {
 				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
 				options: [
 					{
-						displayName: 'Added',
-						name: 'added',
-						type: 'dateTime',
-						default: '',
-						description: 'Date the testimonial was added (useful for backdating)',
-					},
-					{
-						displayName: 'Approval Status',
-						name: 'approved',
-						type: 'options',
-						options: [
-							{ name: 'Pending', value: 0 },
-							{ name: 'Approved', value: 1 },
-							{ name: 'Rejected', value: 2 },
-						],
-						default: 0,
-					},
-					{
-						displayName: 'Avatar URL',
-						name: 'avatar',
-						type: 'string',
-						default: '',
-						placeholder: 'https://example.com/avatar.jpg',
-						description: 'URL to a publicly accessible image',
-					},
-					{
 						displayName: 'Company',
 						name: 'company',
 						type: 'string',
 						default: '',
-					},
-					{
-						displayName: 'Email',
-						name: 'email',
-						type: 'string',
-						placeholder: 'name@email.com',
-						default: '',
-					},
-					{
-						displayName: 'Featured',
-						name: 'featured',
-						type: 'boolean',
-						default: false,
-						description: 'Whether this testimonial should be featured',
+						description: "The customer's company name (e.g., 'Acme Inc')",
 					},
 					{
 						displayName: 'Include Link to Workflow',
@@ -227,19 +243,16 @@ export class Endorsal implements INodeType {
 						name: 'location',
 						type: 'string',
 						default: '',
+						description: "The customer's geographic location (e.g., 'United States', 'Toronto, ON')",
 					},
 					{
 						displayName: 'Position',
 						name: 'position',
 						type: 'string',
 						default: '',
-					},
-					{
-						displayName: 'Rating',
-						name: 'rating',
-						type: 'number',
-						typeOptions: { minValue: 1, maxValue: 5 },
-						default: 5,
+						placeholder: 'Founder',
+						description:
+							"The customer's job title or role at their company (e.g., 'Founder', 'CEO', 'Marketing Manager'). Displayed under their name on testimonials.",
 					},
 				],
 			},
@@ -680,21 +693,24 @@ export class Endorsal implements INodeType {
 							propertyID: this.getNodeParameter('propertyID', i) as string,
 							name: this.getNodeParameter('name', i) as string,
 							comments: this.getNodeParameter('comments', i) as string,
+							rating: this.getNodeParameter('rating', i) as number,
+							approved: this.getNodeParameter('approved', i) as number,
+							featured: (this.getNodeParameter('featured', i) as boolean) ? 1 : 0,
 						};
 
-						const additional = this.getNodeParameter('additionalFields', i) as IDataObject;
+						const email = this.getNodeParameter('email', i, '') as string;
+						if (email) body.email = email;
+						const avatar = this.getNodeParameter('avatar', i, '') as string;
+						if (avatar) body.avatar = avatar;
+						const added = this.getNodeParameter('added', i, '') as string;
+						if (added) {
+							body.added = new Date(added).toISOString().split('T')[0];
+						}
 
-						if (additional.email) body.email = additional.email;
+						const additional = this.getNodeParameter('additionalFields', i) as IDataObject;
 						if (additional.location) body.location = additional.location;
 						if (additional.position) body.position = additional.position;
 						if (additional.company) body.company = additional.company;
-						if (additional.avatar) body.avatar = additional.avatar;
-						if (additional.rating !== undefined) body.rating = additional.rating;
-						if (additional.approved !== undefined) body.approved = additional.approved;
-						if (additional.featured !== undefined) body.featured = additional.featured ? 1 : 0;
-						if (additional.added) {
-							body.added = new Date(additional.added as string).toISOString().split('T')[0];
-						}
 
 						if (additional.includeLinkToWorkflow) {
 							appendWorkflowFooter.call(this, body, 'comments');
