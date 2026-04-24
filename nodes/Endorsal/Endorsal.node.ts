@@ -284,13 +284,21 @@ export class Endorsal implements INodeType {
 			// Testimonial: Get Many — filters
 			// ==================================================
 			{
+				displayName:
+					'<b>Note on multi-property accounts:</b> Endorsal\'s API key has a "default property" (the one selected when the key was generated). Without the Property filter, this operation only returns testimonials for that default property. Set the Property filter to fetch testimonials from any of your other properties.',
+				name: 'getAllNotice',
+				type: 'notice',
+				default: '',
+				displayOptions: { show: { resource: ['testimonial'], operation: ['getAll'] } },
+			},
+			{
 				displayName: 'Filters',
 				name: 'getAllFilters',
 				type: 'collection',
 				placeholder: 'Add Filter',
 				default: {},
 				description:
-					'Optional filters. When any filter is set, the node uses Endorsal\'s search endpoint with property/field constraints; otherwise it lists all testimonials accessible to the API key.',
+					'Optional filters. Setting Property switches to the property-scoped endpoint (the only way to fetch testimonials from non-default properties); other filters are then applied client-side.',
 				displayOptions: { show: { resource: ['testimonial'], operation: ['getAll'] } },
 				options: [
 					{
@@ -820,26 +828,55 @@ export class Endorsal implements INodeType {
 
 					else if (operation === 'getAll') {
 						const filters = this.getNodeParameter('getAllFilters', i, {}) as IDataObject;
-						const query: Array<Record<string, any>> = [];
-						if (filters.propertyID) query.push({ field: 'propertyID', operator: '=', value: filters.propertyID });
-						if (filters.approved !== undefined && filters.approved !== '') {
-							query.push({ field: 'approved', operator: '=', value: filters.approved });
-						}
-						if (filters.featured !== undefined && filters.featured !== '') {
-							query.push({ field: 'featured', operator: '=', value: filters.featured });
-						}
-						if (filters.rating !== undefined && filters.rating !== '') {
-							query.push({ field: 'rating', operator: '>=', value: filters.rating });
+						let items: any[] = [];
+
+						if (filters.propertyID) {
+							// Endorsal's plain /testimonials and /testimonials/search endpoints
+							// are silently scoped to the API key's default property and ignore
+							// any propertyID filter. The undocumented /properties/{id}/testimonials
+							// endpoint is the only reliable way to fetch testimonials for a
+							// non-default property.
+							responseData = await endorsalApiRequest.call(
+								this, 'GET', `/properties/${filters.propertyID}/testimonials`,
+							);
+							items = responseData?.data ?? [];
+
+							// Apply secondary filters client-side since the property-scoped
+							// endpoint doesn't support them server-side.
+							if (filters.approved !== undefined && filters.approved !== '') {
+								items = items.filter((t: any) => t.approved === filters.approved);
+							}
+							if (filters.featured !== undefined && filters.featured !== '') {
+								items = items.filter((t: any) => t.featured === filters.featured);
+							}
+							if (filters.rating !== undefined && filters.rating !== '') {
+								items = items.filter((t: any) => (t.rating ?? 0) >= (filters.rating as number));
+							}
+						} else {
+							// No property filter — use search endpoint when other filters set,
+							// otherwise plain list. Both are scoped to the key's default property.
+							const query: Array<Record<string, any>> = [];
+							if (filters.approved !== undefined && filters.approved !== '') {
+								query.push({ field: 'approved', operator: '=', value: filters.approved });
+							}
+							if (filters.featured !== undefined && filters.featured !== '') {
+								query.push({ field: 'featured', operator: '=', value: filters.featured });
+							}
+							if (filters.rating !== undefined && filters.rating !== '') {
+								query.push({ field: 'rating', operator: '>=', value: filters.rating });
+							}
+
+							if (query.length > 0) {
+								responseData = await endorsalApiRequest.call(
+									this, 'POST', '/testimonials/search', { query },
+								);
+							} else {
+								responseData = await endorsalApiRequest.call(this, 'GET', '/testimonials');
+							}
+							items = responseData?.data ?? [];
 						}
 
-						if (query.length > 0) {
-							responseData = await endorsalApiRequest.call(
-								this, 'POST', '/testimonials/search', { query },
-							);
-						} else {
-							responseData = await endorsalApiRequest.call(this, 'GET', '/testimonials');
-						}
-						for (const item of (responseData?.data ?? [])) {
+						for (const item of items) {
 							returnData.push({ json: item, pairedItem: { item: i } });
 						}
 						continue;
