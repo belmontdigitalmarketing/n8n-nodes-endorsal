@@ -33,6 +33,7 @@ async function endorsalApiRequest(
 		},
 		qs: qs ?? {},
 		json: true,
+		timeout: 30000,
 	};
 
 	if (body && (method === 'POST' || method === 'PATCH' || method === 'DELETE')) {
@@ -166,7 +167,7 @@ export class Endorsal implements INodeType {
 				required: true,
 				default: '',
 				description:
-					'The testimonial text. <b>Plain text only</b> — Endorsal does not render HTML or markdown (any tags will appear as literal text or be stripped). For multi-line / multi-paragraph testimonials, use line breaks (\\n in expressions, or just press Enter in the form). Endorsal stores newlines verbatim, but how they render in your widgets is style-dependent — recommend testing one multi-paragraph testimonial through your actual widget before relying on it.',
+					'The testimonial text. <b>Formatting tags ignored, structural tags interpreted</b>: <code>&lt;br&gt;</code> renders as a line break, <code>&lt;p&gt;</code> renders as a paragraph break, but <code>&lt;strong&gt;</code>/<code>&lt;em&gt;</code>/<code>&lt;b&gt;</code>/etc. are stripped (their text remains, formatting is lost). For multi-paragraph content, the cleanest approach is to use real newlines — press Enter in this field or use <code>\\n</code> via expression. Literal backslash-n character sequences typed as text are NOT interpreted (they show verbatim). Markdown is not supported.',
 				displayOptions: { show: { resource: ['testimonial'], operation: ['create'] } },
 			},
 			{
@@ -285,6 +286,14 @@ export class Endorsal implements INodeType {
 			// ==================================================
 			// Testimonial: Update
 			// ==================================================
+			{
+				displayName:
+					'⚠️ <b>Known issue</b>: as of v0.1.3, Endorsal\'s <code>PATCH /v1/testimonials/{id}</code> endpoint hangs indefinitely (server-side bug, not n8n). This operation will time out after 30 seconds. Workaround: delete the testimonial and recreate it. Please report the issue to <a href="https://endorsal.io/contact">Endorsal support</a> — once they fix it, this operation will start working without any node update needed.',
+				name: 'updateNotice',
+				type: 'notice',
+				default: '',
+				displayOptions: { show: { resource: ['testimonial'], operation: ['update'] } },
+			},
 			{
 				displayName: 'Update Fields',
 				name: 'updateFields',
@@ -587,6 +596,14 @@ export class Endorsal implements INodeType {
 			// ==================================================
 			// Tag: Update
 			// ==================================================
+			{
+				displayName:
+					'⚠️ <b>Known issue</b>: as of v0.1.3, Endorsal\'s <code>PATCH /v1/tags/{id}</code> endpoint hangs indefinitely (server-side bug, not n8n). This operation will time out after 30 seconds. Workaround: delete the tag and recreate it. Please report the issue to <a href="https://endorsal.io/contact">Endorsal support</a> — once they fix it, this operation will start working without any node update needed.',
+				name: 'tagUpdateNotice',
+				type: 'notice',
+				default: '',
+				displayOptions: { show: { resource: ['tag'], operation: ['update'] } },
+			},
 			{
 				displayName: 'Update Fields',
 				name: 'tagUpdateFields',
