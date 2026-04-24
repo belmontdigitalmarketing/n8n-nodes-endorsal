@@ -54,6 +54,20 @@ function appendWorkflowFooter(
 	target[contentKey] = existing ? `${existing}${footer}` : footer.trimStart();
 }
 
+// Map our safe internal operator values to Endorsal's API symbols.
+// We can't use raw symbols ('=', '>=', etc.) as option values because
+// n8n interprets values starting with '=' as expressions.
+const SEARCH_OPERATOR_MAP: Record<string, string> = {
+	eq: '=',
+	ne: '!=',
+	gt: '>',
+	gte: '>=',
+	lt: '<',
+	lte: '<=',
+	contains: 'contains',
+	in: 'in',
+};
+
 // ============================================================
 // Node Definition
 // ============================================================
@@ -262,6 +276,60 @@ export class Endorsal implements INodeType {
 						placeholder: 'Founder',
 						description:
 							"The customer's job title or role at their company (e.g., 'Founder', 'CEO', 'Marketing Manager'). Displayed under their name on testimonials.",
+					},
+				],
+			},
+
+			// ==================================================
+			// Testimonial: Get Many — filters
+			// ==================================================
+			{
+				displayName: 'Filters',
+				name: 'getAllFilters',
+				type: 'collection',
+				placeholder: 'Add Filter',
+				default: {},
+				description:
+					'Optional filters. When any filter is set, the node uses Endorsal\'s search endpoint with property/field constraints; otherwise it lists all testimonials accessible to the API key.',
+				displayOptions: { show: { resource: ['testimonial'], operation: ['getAll'] } },
+				options: [
+					{
+						displayName: 'Property Name or ID',
+						name: 'propertyID',
+						type: 'options',
+						typeOptions: { loadOptionsMethod: 'getProperties' },
+						default: '',
+						description:
+							'Only return testimonials for this property. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
+					{
+						displayName: 'Approval Status',
+						name: 'approved',
+						type: 'options',
+						options: [
+							{ name: 'Pending', value: 0 },
+							{ name: 'Approved', value: 1 },
+							{ name: 'Rejected', value: 2 },
+						],
+						default: 1,
+					},
+					{
+						displayName: 'Featured',
+						name: 'featured',
+						type: 'options',
+						options: [
+							{ name: 'Featured Only', value: 1 },
+							{ name: 'Not Featured Only', value: 0 },
+						],
+						default: 1,
+					},
+					{
+						displayName: 'Minimum Rating',
+						name: 'rating',
+						type: 'number',
+						typeOptions: { minValue: 1, maxValue: 5 },
+						default: 5,
+						description: 'Only return testimonials with at least this rating',
 					},
 				],
 			},
@@ -488,16 +556,16 @@ export class Endorsal implements INodeType {
 								name: 'operator',
 								type: 'options',
 								options: [
-									{ name: 'Equals', value: '=' },
-									{ name: 'Not Equal', value: '!=' },
-									{ name: 'Greater Than', value: '>' },
-									{ name: 'Greater Than or Equal', value: '>=' },
-									{ name: 'Less Than', value: '<' },
-									{ name: 'Less Than or Equal', value: '<=' },
+									{ name: 'Equals', value: 'eq' },
+									{ name: 'Not Equal', value: 'ne' },
+									{ name: 'Greater Than', value: 'gt' },
+									{ name: 'Greater Than or Equal', value: 'gte' },
+									{ name: 'Less Than', value: 'lt' },
+									{ name: 'Less Than or Equal', value: 'lte' },
 									{ name: 'Contains (Regex)', value: 'contains' },
 									{ name: 'In (Array)', value: 'in' },
 								],
-								default: '=',
+								default: 'eq',
 							},
 							{
 								displayName: 'Value',
@@ -751,7 +819,26 @@ export class Endorsal implements INodeType {
 					}
 
 					else if (operation === 'getAll') {
-						responseData = await endorsalApiRequest.call(this, 'GET', '/testimonials');
+						const filters = this.getNodeParameter('getAllFilters', i, {}) as IDataObject;
+						const query: Array<Record<string, any>> = [];
+						if (filters.propertyID) query.push({ field: 'propertyID', operator: '=', value: filters.propertyID });
+						if (filters.approved !== undefined && filters.approved !== '') {
+							query.push({ field: 'approved', operator: '=', value: filters.approved });
+						}
+						if (filters.featured !== undefined && filters.featured !== '') {
+							query.push({ field: 'featured', operator: '=', value: filters.featured });
+						}
+						if (filters.rating !== undefined && filters.rating !== '') {
+							query.push({ field: 'rating', operator: '>=', value: filters.rating });
+						}
+
+						if (query.length > 0) {
+							responseData = await endorsalApiRequest.call(
+								this, 'POST', '/testimonials/search', { query },
+							);
+						} else {
+							responseData = await endorsalApiRequest.call(this, 'GET', '/testimonials');
+						}
 						for (const item of (responseData?.data ?? [])) {
 							returnData.push({ json: item, pairedItem: { item: i } });
 						}
@@ -826,8 +913,9 @@ export class Endorsal implements INodeType {
 						};
 
 						const query = (searchQuery.match ?? []).map((m) => {
+							const apiOperator = SEARCH_OPERATOR_MAP[m.operator] ?? m.operator;
 							let parsedValue: any = m.value;
-							if (m.operator === 'in') {
+							if (apiOperator === 'in') {
 								try {
 									parsedValue = JSON.parse(m.value);
 								} catch {
@@ -838,7 +926,7 @@ export class Endorsal implements INodeType {
 							}
 							return {
 								field: m.field,
-								operator: m.operator,
+								operator: apiOperator,
 								value: parsedValue,
 							};
 						});
