@@ -742,6 +742,14 @@ export class Endorsal implements INodeType {
 			// Tag: Create
 			// ==================================================
 			{
+				displayName:
+					'ℹ️ The new tag is created on whichever property the API key is scoped to (its "default property", baked into the JWT when the key was generated). If a tag with this name already exists on that property, Endorsal returns the existing tag instead of creating a new one — the output will include <code>existing: true</code> in that case. To target a different property, use an API key scoped to it.',
+				name: 'tagCreateNotice',
+				type: 'notice',
+				default: '',
+				displayOptions: { show: { resource: ['tag'], operation: ['create'] } },
+			},
+			{
 				displayName: 'Name',
 				name: 'tagName',
 				type: 'string',
@@ -1182,8 +1190,12 @@ export class Endorsal implements INodeType {
 						if (additional.link) body.link = additional.link;
 						if (additional.sku) body.sku = additional.sku;
 
-						responseData = await endorsalApiRequest.call(this, 'POST', '/tags', body);
-						responseData = responseData?.data ?? responseData;
+						// Endorsal dedup quirk: if a tag with this name already exists on the
+						// key's scoped property, the API returns `success: "Existing tag"` and
+						// the existing record. Preserve that signal so workflows can branch on it.
+						const response = await endorsalApiRequest.call(this, 'POST', '/tags', body);
+						const data = (response?.data ?? response) as IDataObject;
+						responseData = { ...data, existing: response?.success === 'Existing tag' };
 					}
 
 					else if (operation === 'get') {
