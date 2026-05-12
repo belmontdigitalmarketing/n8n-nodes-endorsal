@@ -1,6 +1,6 @@
 {
   "name": "@belmontdigitalmarketing/n8n-nodes-endorsal",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "n8n community node for Endorsal — testimonial collection and management",
   "keywords": [
     "n8n-community-node-package",
@@ -30,7 +30,9 @@
   "scripts": {
     "build": "tsc && gulp build:icons",
     "dev": "tsc --watch",
-    "prepublishOnly": "npm run build"
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "npm run build && eslint -c .eslintrc.prepublish.js nodes credentials package.json"
   },
   "files": [
     "dist"
@@ -47,7 +49,11 @@
   },
   "devDependencies": {
     "@types/node": "^18.19.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-n8n-nodes-base": "^1.16.6",
     "gulp": "^4.0.2",
+    "jsonc-eslint-parser": "^2.4.2",
     "n8n-workflow": "~1.10.0",
     "typescript": "~5.2.2"
   },

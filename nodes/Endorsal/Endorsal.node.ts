@@ -200,7 +200,7 @@ export class Endorsal implements INodeType {
 				displayOptions: { show: { resource: ['property'] } },
 				options: [
 					{ name: 'Get', value: 'get', action: 'Get a property', description: 'Retrieve a single property by ID' },
-					{ name: 'Get Many', value: 'getAll', action: 'Get many properties', description: 'List all properties on your account' },
+					{ name: 'Get Many', value: 'getAll', action: 'Get many properties', description: 'List many properties on your account' },
 				],
 				default: 'getAll',
 			},
@@ -212,8 +212,7 @@ export class Endorsal implements INodeType {
 				typeOptions: { loadOptionsMethod: 'getProperties' },
 				required: true,
 				default: '',
-				description:
-					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				displayOptions: { show: { resource: ['property'], operation: ['get'] } },
 			},
 
@@ -353,8 +352,7 @@ export class Endorsal implements INodeType {
 						name: 'includeLinkToWorkflow',
 						type: 'boolean',
 						default: false,
-						description:
-							'Whether to append a "Generated via n8n: <workflow URL>" footer to the comments field, linking back to this workflow',
+						description: 'Whether to append a "Generated via n8n: &lt;workflow URL&gt;" footer to the comments field, linking back to this workflow',
 					},
 					{
 						displayName: 'Location',
@@ -397,15 +395,6 @@ export class Endorsal implements INodeType {
 				displayOptions: { show: { resource: ['testimonial'], operation: ['getAll'] } },
 				options: [
 					{
-						displayName: 'Property Name or ID',
-						name: 'propertyID',
-						type: 'options',
-						typeOptions: { loadOptionsMethod: 'getProperties' },
-						default: '',
-						description:
-							'Only return testimonials for this property. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
-					},
-					{
 						displayName: 'Approval Status',
 						name: 'approved',
 						type: 'options',
@@ -425,14 +414,6 @@ export class Endorsal implements INodeType {
 							{ name: 'Not Featured Only', value: 0 },
 						],
 						default: 1,
-					},
-					{
-						displayName: 'Minimum Rating',
-						name: 'rating',
-						type: 'number',
-						typeOptions: { minValue: 1, maxValue: 5 },
-						default: 5,
-						description: 'Only return testimonials with at least this rating',
 					},
 					{
 						displayName: 'Match Conditions',
@@ -486,6 +467,23 @@ export class Endorsal implements INodeType {
 							},
 						],
 					},
+					{
+						displayName: 'Minimum Rating',
+						name: 'rating',
+						type: 'number',
+						typeOptions: { minValue: 1, maxValue: 5 },
+						default: 5,
+						description: 'Only return testimonials with at least this rating',
+					},
+					{
+						displayName: 'Property Name or ID',
+						name: 'propertyID',
+						type: 'options',
+						typeOptions: { loadOptionsMethod: 'getProperties' },
+						default: '',
+						description:
+							'Only return testimonials for this property. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					},
 				],
 			},
 
@@ -510,8 +508,7 @@ export class Endorsal implements INodeType {
 			// Testimonial: Update
 			// ==================================================
 			{
-				displayName:
-					'⚠️ <b>Known issue</b>: as of v0.1.3, Endorsal\'s <code>PATCH /v1/testimonials/{id}</code> endpoint hangs indefinitely (server-side bug, not n8n). This operation will time out after 30 seconds. Workaround: delete the testimonial and recreate it. Please report the issue to <a href="https://endorsal.io/contact">Endorsal support</a> — once they fix it, this operation will start working without any node update needed.',
+				displayName: '⚠️ <b>Known issue</b>: as of v0.1.3, Endorsal\'s <code>PATCH /v1/testimonials/{ID}</code> endpoint hangs indefinitely (server-side bug, not n8n). This operation will time out after 30 seconds. Workaround: delete the testimonial and recreate it. Please report the issue to <a href="https://endorsal.io/contact">Endorsal support</a> — once they fix it, this operation will start working without any node update needed.',
 				name: 'updateNotice',
 				type: 'notice',
 				default: '',
@@ -573,8 +570,7 @@ export class Endorsal implements INodeType {
 						name: 'includeLinkToWorkflow',
 						type: 'boolean',
 						default: false,
-						description:
-							'Whether to append a "Generated via n8n: <workflow URL>" footer to the comments field. Requires Comments to be set.',
+						description: 'Whether to append a "Generated via n8n: &lt;workflow URL&gt;" footer to the comments field. Requires Comments to be set.',
 					},
 					{
 						displayName: 'Location',
@@ -817,8 +813,7 @@ export class Endorsal implements INodeType {
 				typeOptions: { loadOptionsMethod: 'getTags' },
 				required: true,
 				default: '',
-				description:
-					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				displayOptions: {
 					show: {
 						resource: ['tag'],
@@ -831,8 +826,7 @@ export class Endorsal implements INodeType {
 			// Tag: Update
 			// ==================================================
 			{
-				displayName:
-					'⚠️ <b>Known issue</b>: as of v0.1.3, Endorsal\'s <code>PATCH /v1/tags/{id}</code> endpoint hangs indefinitely (server-side bug, not n8n). This operation will time out after 30 seconds. Workaround: delete the tag and recreate it. Please report the issue to <a href="https://endorsal.io/contact">Endorsal support</a> — once they fix it, this operation will start working without any node update needed.',
+				displayName: '⚠️ <b>Known issue</b>: as of v0.1.3, Endorsal\'s <code>PATCH /v1/tags/{ID}</code> endpoint hangs indefinitely (server-side bug, not n8n). This operation will time out after 30 seconds. Workaround: delete the tag and recreate it. Please report the issue to <a href="https://endorsal.io/contact">Endorsal support</a> — once they fix it, this operation will start working without any node update needed.',
 				name: 'tagUpdateNotice',
 				type: 'notice',
 				default: '',
