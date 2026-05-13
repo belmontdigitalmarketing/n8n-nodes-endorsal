@@ -1,9 +1,4 @@
-import {
-	IAuthenticateGeneric,
-	ICredentialTestRequest,
-	ICredentialType,
-	INodeProperties,
-} from 'n8n-workflow';
+import { IAuthenticateGeneric, ICredentialTestRequest, ICredentialType, INodeProperties } from 'n8n-workflow';
 
 export class EndorsalApi implements ICredentialType {
 	name = 'endorsalApi';

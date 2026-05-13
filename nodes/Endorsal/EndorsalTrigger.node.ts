@@ -1,9 +1,4 @@
-import {
-	INodeType,
-	INodeTypeDescription,
-	IWebhookFunctions,
-	IWebhookResponseData,
-} from 'n8n-workflow';
+import { INodeType, INodeTypeDescription, IWebhookFunctions, IWebhookResponseData } from 'n8n-workflow';
 
 export class EndorsalTrigger implements INodeType {
 	description: INodeTypeDescription = {

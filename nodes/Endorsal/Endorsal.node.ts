@@ -89,21 +89,30 @@ function matchesCondition(
 	const fieldValue = item[condition.field];
 	const v = condition.value;
 	switch (condition.internalOperator) {
-		case 'eq': return fieldValue == v;
-		case 'ne': return fieldValue != v;
-		case 'gt': return Number(fieldValue) > Number(v);
-		case 'gte': return Number(fieldValue) >= Number(v);
-		case 'lt': return Number(fieldValue) < Number(v);
-		case 'lte': return Number(fieldValue) <= Number(v);
+		case 'eq':
+			return fieldValue == v;
+		case 'ne':
+			return fieldValue != v;
+		case 'gt':
+			return Number(fieldValue) > Number(v);
+		case 'gte':
+			return Number(fieldValue) >= Number(v);
+		case 'lt':
+			return Number(fieldValue) < Number(v);
+		case 'lte':
+			return Number(fieldValue) <= Number(v);
 		case 'contains':
 			try {
 				return new RegExp(String(v), 'i').test(String(fieldValue ?? ''));
 			} catch {
-				return String(fieldValue ?? '').toLowerCase().includes(String(v).toLowerCase());
+				return String(fieldValue ?? '')
+					.toLowerCase()
+					.includes(String(v).toLowerCase());
 			}
 		case 'in':
 			return Array.isArray(v) ? v.includes(fieldValue) : false;
-		default: return true;
+		default:
+			return true;
 	}
 }
 
@@ -182,7 +191,12 @@ export class Endorsal implements INodeType {
 					{ name: 'Delete', value: 'delete', action: 'Delete a testimonial' },
 					{ name: 'Get', value: 'get', action: 'Get a testimonial' },
 					{ name: 'Get Many', value: 'getAll', action: 'Get many testimonials' },
-					{ name: 'Search', value: 'search', action: 'Search testimonials', description: 'Multi-field query with operators' },
+					{
+						name: 'Search',
+						value: 'search',
+						action: 'Search testimonials',
+						description: 'Multi-field query with operators',
+					},
 					{ name: 'Tag', value: 'tag', action: 'Tag a testimonial', description: 'Attach existing and/or new tags' },
 					{ name: 'Update', value: 'update', action: 'Update a testimonial' },
 				],
@@ -200,7 +214,12 @@ export class Endorsal implements INodeType {
 				displayOptions: { show: { resource: ['property'] } },
 				options: [
 					{ name: 'Get', value: 'get', action: 'Get a property', description: 'Retrieve a single property by ID' },
-					{ name: 'Get Many', value: 'getAll', action: 'Get many properties', description: 'List many properties on your account' },
+					{
+						name: 'Get Many',
+						value: 'getAll',
+						action: 'Get many properties',
+						description: 'List many properties on your account',
+					},
 				],
 				default: 'getAll',
 			},
@@ -212,7 +231,8 @@ export class Endorsal implements INodeType {
 				typeOptions: { loadOptionsMethod: 'getProperties' },
 				required: true,
 				default: '',
-				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				displayOptions: { show: { resource: ['property'], operation: ['get'] } },
 			},
 
@@ -230,7 +250,12 @@ export class Endorsal implements INodeType {
 					{ name: 'Delete', value: 'delete', action: 'Delete a tag' },
 					{ name: 'Get', value: 'get', action: 'Get a tag' },
 					{ name: 'Get Many', value: 'getAll', action: 'Get many tags' },
-					{ name: 'Get Testimonials', value: 'getTestimonials', action: 'Get testimonials for a tag', description: 'List all testimonials with this tag' },
+					{
+						name: 'Get Testimonials',
+						value: 'getTestimonials',
+						action: 'Get testimonials for a tag',
+						description: 'List all testimonials with this tag',
+					},
 					{ name: 'Update', value: 'update', action: 'Update a tag' },
 				],
 				default: 'create',
@@ -352,7 +377,8 @@ export class Endorsal implements INodeType {
 						name: 'includeLinkToWorkflow',
 						type: 'boolean',
 						default: false,
-						description: 'Whether to append a "Generated via n8n: &lt;workflow URL&gt;" footer to the comments field, linking back to this workflow',
+						description:
+							'Whether to append a "Generated via n8n: &lt;workflow URL&gt;" footer to the comments field, linking back to this workflow',
 					},
 					{
 						displayName: 'Location',
@@ -508,7 +534,8 @@ export class Endorsal implements INodeType {
 			// Testimonial: Update
 			// ==================================================
 			{
-				displayName: '⚠️ <b>Known issue</b>: as of v0.1.3, Endorsal\'s <code>PATCH /v1/testimonials/{ID}</code> endpoint hangs indefinitely (server-side bug, not n8n). This operation will time out after 30 seconds. Workaround: delete the testimonial and recreate it. Please report the issue to <a href="https://endorsal.io/contact">Endorsal support</a> — once they fix it, this operation will start working without any node update needed.',
+				displayName:
+					'⚠️ <b>Known issue</b>: as of v0.1.3, Endorsal\'s <code>PATCH /v1/testimonials/{ID}</code> endpoint hangs indefinitely (server-side bug, not n8n). This operation will time out after 30 seconds. Workaround: delete the testimonial and recreate it. Please report the issue to <a href="https://endorsal.io/contact">Endorsal support</a> — once they fix it, this operation will start working without any node update needed.',
 				name: 'updateNotice',
 				type: 'notice',
 				default: '',
@@ -570,7 +597,8 @@ export class Endorsal implements INodeType {
 						name: 'includeLinkToWorkflow',
 						type: 'boolean',
 						default: false,
-						description: 'Whether to append a "Generated via n8n: &lt;workflow URL&gt;" footer to the comments field. Requires Comments to be set.',
+						description:
+							'Whether to append a "Generated via n8n: &lt;workflow URL&gt;" footer to the comments field. Requires Comments to be set.',
 					},
 					{
 						displayName: 'Location',
@@ -813,7 +841,8 @@ export class Endorsal implements INodeType {
 				typeOptions: { loadOptionsMethod: 'getTags' },
 				required: true,
 				default: '',
-				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				displayOptions: {
 					show: {
 						resource: ['tag'],
@@ -826,7 +855,8 @@ export class Endorsal implements INodeType {
 			// Tag: Update
 			// ==================================================
 			{
-				displayName: '⚠️ <b>Known issue</b>: as of v0.1.3, Endorsal\'s <code>PATCH /v1/tags/{ID}</code> endpoint hangs indefinitely (server-side bug, not n8n). This operation will time out after 30 seconds. Workaround: delete the tag and recreate it. Please report the issue to <a href="https://endorsal.io/contact">Endorsal support</a> — once they fix it, this operation will start working without any node update needed.',
+				displayName:
+					'⚠️ <b>Known issue</b>: as of v0.1.3, Endorsal\'s <code>PATCH /v1/tags/{ID}</code> endpoint hangs indefinitely (server-side bug, not n8n). This operation will time out after 30 seconds. Workaround: delete the tag and recreate it. Please report the issue to <a href="https://endorsal.io/contact">Endorsal support</a> — once they fix it, this operation will start working without any node update needed.',
 				name: 'tagUpdateNotice',
 				type: 'notice',
 				default: '',
@@ -970,19 +1000,16 @@ export class Endorsal implements INodeType {
 
 						responseData = await endorsalApiRequest.call(this, 'POST', '/testimonials', body);
 						responseData = responseData?.data ?? responseData;
-					}
-
-					else if (operation === 'get') {
+					} else if (operation === 'get') {
 						const id = this.getNodeParameter('testimonialId', i) as string;
 						responseData = await endorsalApiRequest.call(this, 'GET', `/testimonials/${id}`);
 						responseData = responseData?.data ?? responseData;
-					}
-
-					else if (operation === 'getAll') {
+					} else if (operation === 'getAll') {
 						const filters = this.getNodeParameter('getAllFilters', i, {}) as IDataObject;
-						const matchesCollection = (filters.matches as {
-							match?: Array<{ field: string; operator: string; value: string; propertyValue?: string }>;
-						}) ?? {};
+						const matchesCollection =
+							(filters.matches as {
+								match?: Array<{ field: string; operator: string; value: string; propertyValue?: string }>;
+							}) ?? {};
 						const userMatches = (matchesCollection.match ?? []).map((m) => {
 							const rawValue = m.field === 'propertyID' ? (m.propertyValue ?? '') : m.value;
 							return {
@@ -1003,7 +1030,9 @@ export class Endorsal implements INodeType {
 							// non-default property — but it doesn't support server-side
 							// filtering, so we apply ALL filters client-side after fetching.
 							responseData = await endorsalApiRequest.call(
-								this, 'GET', `/properties/${filters.propertyID}/testimonials`,
+								this,
+								'GET',
+								`/properties/${filters.propertyID}/testimonials`,
 							);
 							items = responseData?.data ?? [];
 
@@ -1038,9 +1067,7 @@ export class Endorsal implements INodeType {
 							}
 
 							if (query.length > 0) {
-								responseData = await endorsalApiRequest.call(
-									this, 'POST', '/testimonials/search', { query },
-								);
+								responseData = await endorsalApiRequest.call(this, 'POST', '/testimonials/search', { query });
 							} else {
 								responseData = await endorsalApiRequest.call(this, 'GET', '/testimonials');
 							}
@@ -1051,9 +1078,7 @@ export class Endorsal implements INodeType {
 							returnData.push({ json: item, pairedItem: { item: i } });
 						}
 						continue;
-					}
-
-					else if (operation === 'update') {
+					} else if (operation === 'update') {
 						const id = this.getNodeParameter('testimonialId', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i) as IDataObject;
 						const body: Record<string, any> = {};
@@ -1071,15 +1096,11 @@ export class Endorsal implements INodeType {
 
 						responseData = await endorsalApiRequest.call(this, 'PATCH', `/testimonials/${id}`, body);
 						responseData = responseData?.data ?? responseData;
-					}
-
-					else if (operation === 'delete') {
+					} else if (operation === 'delete') {
 						const id = this.getNodeParameter('testimonialId', i) as string;
 						responseData = await endorsalApiRequest.call(this, 'DELETE', `/testimonials/${id}`);
 						responseData = responseData?.data ?? responseData;
-					}
-
-					else if (operation === 'tag') {
+					} else if (operation === 'tag') {
 						const id = this.getNodeParameter('testimonialId', i) as string;
 						const existingTags = this.getNodeParameter('existingTags', i, []) as string[];
 						const newTagsCollection = this.getNodeParameter('newTags', i, {}) as {
@@ -1109,13 +1130,9 @@ export class Endorsal implements INodeType {
 							tags.push(entry);
 						}
 
-						responseData = await endorsalApiRequest.call(
-							this, 'POST', `/testimonials/${id}/tag`, { tags },
-						);
+						responseData = await endorsalApiRequest.call(this, 'POST', `/testimonials/${id}/tag`, { tags });
 						responseData = responseData?.data ?? responseData;
-					}
-
-					else if (operation === 'search') {
+					} else if (operation === 'search') {
 						const searchQuery = this.getNodeParameter('searchQuery', i, {}) as {
 							match?: Array<{ field: string; operator: string; value: string; propertyValue?: string }>;
 						};
@@ -1140,10 +1157,8 @@ export class Endorsal implements INodeType {
 							};
 						});
 
-						responseData = await endorsalApiRequest.call(
-							this, 'POST', '/testimonials/search', { query },
-						);
-						for (const item of (responseData?.data ?? [])) {
+						responseData = await endorsalApiRequest.call(this, 'POST', '/testimonials/search', { query });
+						for (const item of responseData?.data ?? []) {
 							returnData.push({ json: item, pairedItem: { item: i } });
 						}
 						continue;
@@ -1158,11 +1173,9 @@ export class Endorsal implements INodeType {
 						const id = this.getNodeParameter('propertyId', i) as string;
 						responseData = await endorsalApiRequest.call(this, 'GET', `/properties/${id}`);
 						responseData = responseData?.data ?? responseData;
-					}
-
-					else if (operation === 'getAll') {
+					} else if (operation === 'getAll') {
 						responseData = await endorsalApiRequest.call(this, 'GET', '/properties');
-						for (const item of (responseData?.data ?? [])) {
+						for (const item of responseData?.data ?? []) {
 							returnData.push({ json: item, pairedItem: { item: i } });
 						}
 						continue;
@@ -1190,23 +1203,17 @@ export class Endorsal implements INodeType {
 						const response = await endorsalApiRequest.call(this, 'POST', '/tags', body);
 						const data = (response?.data ?? response) as IDataObject;
 						responseData = { ...data, existing: response?.success === 'Existing tag' };
-					}
-
-					else if (operation === 'get') {
+					} else if (operation === 'get') {
 						const id = this.getNodeParameter('tagId', i) as string;
 						responseData = await endorsalApiRequest.call(this, 'GET', `/tags/${id}`);
 						responseData = responseData?.data ?? responseData;
-					}
-
-					else if (operation === 'getAll') {
+					} else if (operation === 'getAll') {
 						responseData = await endorsalApiRequest.call(this, 'GET', '/tags');
-						for (const item of (responseData?.data ?? [])) {
+						for (const item of responseData?.data ?? []) {
 							returnData.push({ json: item, pairedItem: { item: i } });
 						}
 						continue;
-					}
-
-					else if (operation === 'update') {
+					} else if (operation === 'update') {
 						const id = this.getNodeParameter('tagId', i) as string;
 						const updateFields = this.getNodeParameter('tagUpdateFields', i) as IDataObject;
 						const body: Record<string, any> = {};
@@ -1216,20 +1223,14 @@ export class Endorsal implements INodeType {
 						}
 						responseData = await endorsalApiRequest.call(this, 'PATCH', `/tags/${id}`, body);
 						responseData = responseData?.data ?? responseData;
-					}
-
-					else if (operation === 'delete') {
+					} else if (operation === 'delete') {
 						const id = this.getNodeParameter('tagId', i) as string;
 						responseData = await endorsalApiRequest.call(this, 'DELETE', `/tags/${id}`);
 						responseData = responseData?.data ?? responseData;
-					}
-
-					else if (operation === 'getTestimonials') {
+					} else if (operation === 'getTestimonials') {
 						const id = this.getNodeParameter('tagId', i) as string;
-						responseData = await endorsalApiRequest.call(
-							this, 'GET', `/tags/${id}/testimonials`,
-						);
-						for (const item of (responseData?.data ?? [])) {
+						responseData = await endorsalApiRequest.call(this, 'GET', `/tags/${id}/testimonials`);
+						for (const item of responseData?.data ?? []) {
 							returnData.push({ json: item, pairedItem: { item: i } });
 						}
 						continue;
